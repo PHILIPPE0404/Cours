@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apprendre Python</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .page { display: none; }
+        .page.active { display: block; }
+        .bloque { pointer-events: none; opacity: 0.5; }
+        .btn-ordre { padding: 1px 6px; font-size: 12px; }
+    </style>
+</head>
+<body class="bg-light p-4">
+
+    <div class="container" style="max-width: 1100px;">
+        
+        <div id="page-connexion" class="page active">
+            <div class="card p-4 shadow mx-auto" style="max-width: 400px; margin-top: 100px;">
+                <h3 class="text-center mb-4">Connexion 🐍</h3>
+                <div class="mb-3">
+                    <label class="form-label">Entrez votre prénom (ou 'admin') :</label>
+                    <input type="text" id="input-username" class="form-control" placeholder="Ex: Lucas">
+                </div>
+                <button class="btn btn-primary w-100" onclick="seConnecter()">Se connecter</button>
+            </div>
+        </div>
+
+        <div id="page-accueil" class="page">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Bonjour, <span id="nom-utilisateur" class="text-primary"></span> ! 👋</h2>
+                <button class="btn btn-danger btn-sm" onclick="deconnexion()">Déconnexion</button>
+            </div>
+            <h4 class="mb-3">Votre Parcours d'Apprentissage :</h4>
+            <div id="parcours-eleve-categories"></div>
+        </div>
+
+        <div id="page-lecon" class="page">
+            <button class="btn btn-outline-secondary mb-4" onclick="changerPage('page-accueil')">← Retour au parcours</button>
+            
+            <div id="zone-cours-contenu" class="card p-4 mb-4 shadow-sm">
+                <h2 id="lecon-titre"></h2>
+                <hr>
+                <p id="lecon-contenu" class="fs-5" style="white-space: pre-line;"></p>
+            </div>
+
+            <div class="card p-4 mb-4 shadow-sm border-primary">
+                <h3 class="text-primary" id="titre-exercice-section">Exercice pratique</h3>
+                <p id="ex-consigne" class="fw-bold"></p>
+                
+                <div id="zone-correction" class="alert d-none"></div>
+
+                <div class="mb-3">
+                    <textarea id="code-utilisateur" rows="6" class="form-control font-monospace bg-dark text-white p-3" placeholder="# Écris ton code Python ici... (Tu peux aller à la ligne avec Entrée)"></textarea>
+                </div>
+                
+                <div id="zone-indice-eleve" class="mb-3 d-none">
+                    <button class="btn btn-outline-info btn-sm" onclick="afficherIndiceEleve()">💡 Besoin d'un indice ?</button>
+                    <div id="texte-indice-eleve" class="alert alert-info mt-2 d-none"></div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <button class="btn btn-success" onclick="verifierCode()">Vérifier mon code</button>
+                    <button id="btn-terminer" class="btn btn-primary d-none" onclick="marquerEtapeTerminee()">Valider & Continuer →</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-admin" class="page">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="text-danger">Panel Administrateur ⚙️</h1>
+                <button class="btn btn-danger btn-sm" onclick="deconnexion()">Déconnexion Admin</button>
+            </div>
+
+            <ul class="nav nav-tabs mb-4">
+                <li class="nav-tabs-item"><button class="nav-link active" onclick="switchOngletAdmin('gestion')">Gestion Cours/Exos/Catégories</button></li>
+                <li class="nav-tabs-item"><button class="nav-link" onclick="switchOngletAdmin('eleves')">Suivi des Élèves</button></li>
+            </ul>
+
+            <div id="onglet-admin-gestion">
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="card p-3 shadow-sm mb-3">
+                            <h5>1. Créer une Catégorie</h5>
+                            <div class="input-group">
+                                <input type="text" id="admin-nom-cat" class="form-control" placeholder="Ex: Les Variables">
+                                <button class="btn btn-primary" onclick="creerCategorie()">Créer</button>
+                            </div>
+                        </div>
+
+                        <div class="card p-3 shadow-sm">
+                            <h5 id="form-niveau-titre">2. Ajouter un Niveau</h5>
+                            <input type="hidden" id="admin-id-niveau-modif" value="">
+                            <div class="mb-2">
+                                <label class="form-label mb-0"><small>Catégorie :</small></label>
+                                <select id="admin-select-cat" class="form-select form-select-sm"></select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label mb-0"><small>Type :</small></label>
+                                <select id="admin-type" class="form-select form-select-sm" onchange="toggleFormAdminFields()">
+                                    <option value="lecon">Leçon (Cours + Exo)</option>
+                                    <option value="exercice_seul">Exercice Seul</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label mb-0"><small>Titre :</small></label>
+                                <input type="text" id="admin-titre" class="form-control form-control-sm">
+                            </div>
+                            <div class="mb-2" id="admin-zone-cours">
+                                <label class="form-label mb-0"><small>Contenu du cours :</small></label>
+                                <textarea id="admin-contenu" rows="3" class="form-control form-control-sm"></textarea>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label mb-0"><small>Consigne Exo :</small></label>
+                                <textarea id="admin-consigne" rows="2" class="form-control form-control-sm"></textarea>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label mb-0"><small>Indice (Aide) :</small></label>
+                                <textarea id="admin-indice" rows="2" class="form-control form-control-sm" placeholder="Ex: Regarde la leçon..."></textarea>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label mb-0"><small>Solution attendue (Mots obligatoires) :</small></label>
+                                <textarea id="admin-solution" rows="3" class="form-control form-control-sm font-monospace" placeholder="Ex: print&#10;&quot;Hello&quot;&#10;Chaque mot/symbole important doit y être."></textarea>
+                            </div>
+                            <button id="btn-admin-soumettre-niveau" class="btn btn-success btn-sm w-100 mt-2" onclick="sauvegarderNiveau()">Ajouter le Niveau</button>
+                            <button id="btn-admin-annuler-modif" class="btn btn-secondary btn-sm w-100 mt-1 d-none" onclick="annulerModificationNiveau()">Annuler la modification</button>
+                        </div>
+                    </div>
+
+                    <div class="col-md-8 mb-4">
+                        <div class="card p-4 shadow-sm">
+                            <h5>Structure actuelle du parcours (Ordre d'apprentissage)</h5>
+                            <div class="table-responsive mt-3">
+                                <table class="table table-bordered align-middle text-center" style="font-size: 14px;">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Ordre</th>
+                                            <th>Catégorie</th>
+                                            <th>Type</th>
+                                            <th>Titre</th>
+                                            <th>Déplacer</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tableau-gestion-niveaux"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="onglet-admin-eleves" style="display:none;">
+                <div class="card p-4 shadow-sm">
+                    <h4>Suivi des élèves & Progression</h4>
+                    <table class="table table-striped mt-3">
+                        <thead>
+                            <tr><th>Prénom</th><th>Niveaux validés</th></tr>
+                        </thead>
+                        <tbody id="tableau-suivi-eleves"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DONNÉES PAR DÉFAUT SI VIDE ---
+        const CAT_INITIALES = ["Bases du Python"];
+        const COURS_INITIALIFS = [
+            { id: 1, categorie: "Bases du Python", type: "lecon", titre: "La fonction Print", contenu: "En Python, on utilise print('Texte') pour afficher.", consigne: "Affiche Hello World", indice: "Pense bien à utiliser le mot 'print'.", solution: "print\n'Hello World'" }
+        ];
+
+        if (!localStorage.getItem('python_categories')) localStorage.setItem('python_categories', JSON.stringify(CAT_INITIALES));
+        if (!localStorage.getItem('python_niveaux')) localStorage.setItem('python_niveaux', JSON.stringify(COURS_INITIALIFS));
+
+        let utilisateurActuel = "";
+        let etapeActuelle = null;
+
+        // --- SYSTEME DE CONNEXION ---
+        function seConnecter() {
+            const username = document.getElementById('input-username').value.trim();
+            if (!username) return alert("Entrez un prénom !");
+
+            if (username.toLowerCase() === "admin") {
+                if (prompt("Code admin :") === "aqwzsxedc") ouvrirPanelAdmin();
+                else alert("Code erroné !");
+            } else {
+                utilisateurActuel = username;
+                document.getElementById('nom-utilisateur').innerText = username;
+                let eleves = JSON.parse(localStorage.getItem('python_eleves')) || {};
+                if (!eleves[username]) { eleves[username] = []; localStorage.setItem('python_eleves', JSON.stringify(eleves)); }
+                chargerParcoursEleve();
+                changerPage('page-accueil');
+            }
+        }
+
+        function deconnexion() {
+            utilisateurActuel = "";
+            document.getElementById('input-username').value = "";
+            changerPage('page-connexion');
+        }
+
+        // --- AFFICHAGE PARCOURS ÉLÈVE ---
+        function chargerParcoursEleve() {
+            const conteneur = document.getElementById('parcours-eleve-categories');
+            conteneur.innerHTML = '';
+            
+            const categories = JSON.parse(localStorage.getItem('python_categories'));
+            const niveaux = JSON.parse(localStorage.getItem('python_niveaux'));
+            const eleves = JSON.parse(localStorage.getItem('python_eleves')) || {};
+            const etapesValidees = eleves[utilisateurActuel] || [];
+
+            categories.forEach(cat => {
+                const niveauxDeLaCat = niveaux.filter(n => n.categorie === cat);
+                if (niveauxDeLaCat.length === 0) return;
+
+                let htmlCat = `<div class="card p-3 mb-4 shadow-sm bg-white">
+                                <h5 class="text-secondary border-bottom pb-2">${cat}</h5>
+                                <div class="list-group">`;
+
+                niveauxDeLaCat.forEach(niveau => {
+                    const indexGlobal = niveaux.findIndex(n => n.id === niveau.id);
+                    
+                    let estBloque = false;
+                    if (indexGlobal > 0) {
+                        const niveauPrecedentId = niveaux[indexGlobal - 1].id;
+                        if (!etapesValidees.includes(niveauPrecedentId)) estBloque = true;
+                    }
+
+                    const estFini = etapesValidees.includes(niveau.id);
+                    let badge = estBloque ? '<span class="badge bg-danger float-end">Bloqué 🔒</span>' : (estFini ? '<span class="badge bg-success float-end">Validé ✅</span>' : '<span class="badge bg-warning text-dark float-end">Disponible ⭐</span>');
+                    let styleClasse = estBloque ? 'bloque list-group-item-secondary' : (estFini ? 'list-group-item-success' : 'list-group-item-warning');
+                    let labelType = niveau.type === 'lecon' ? 'Cours + Exo' : 'Exo Seul';
+
+                    htmlCat += `
+                        <button class="list-group-item list-group-item-action p-3 mb-1 rounded ${styleClasse}" onclick="ouvrirEtape(${niveau.id})">
+                            <strong>${niveau.titre}</strong> <small class="text-muted">(${labelType})</small> ${badge}
+                        </button>
+                    `;
+                });
+
+                htmlCat += `</div></div>`;
+                conteneur.innerHTML += htmlCat;
+            });
+        }
+
+        function ouvrirEtape(id) {
+            const niveaux = JSON.parse(localStorage.getItem('python_niveaux'));
+            etapeActuelle = niveaux.find(n => n.id === id);
+
+            if (etapeActuelle.type === "exercice_seul") {
+                document.getElementById('zone-cours-contenu').style.display = "none";
+                document.getElementById('titre-exercice-section').innerText = "Exercice Unique : " + etapeActuelle.titre;
+            } else {
+                document.getElementById('zone-cours-contenu').style.display = "block";
+                document.getElementById('lecon-titre').innerText = etapeActuelle.titre;
+                document.getElementById('lecon-contenu').innerText = etapeActuelle.contenu;
+                document.getElementById('titre-exercice-section').innerText = "Exercice d'application";
+            }
+
+            document.getElementById('ex-consigne').innerText = etapeActuelle.consigne;
+            document.getElementById('code-utilisateur').value = "";
+            document.getElementById('zone-correction').className = "alert d-none";
+            document.getElementById('btn-terminer').classList.add('d-none');
+            
+            const zoneIndice = document.getElementById('zone-indice-eleve');
+            const texteIndice = document.getElementById('texte-indice-eleve');
+            texteIndice.innerText = etapeActuelle.indice || "";
+            texteIndice.classList.add('d-none');
+
+            if (etapeActuelle.indice && etapeActuelle.indice.trim() !== "") {
+                zoneIndice.classList.remove('d-none');
+            } else {
+                zoneIndice.classList.add('d-none');
+            }
+
+            changerPage('page-lecon');
+        }
+
+        function afficherIndiceEleve() {
+            document.getElementById('texte-indice-eleve').classList.remove('d-none');
+        }
+
+        // --- NOUVEAU SYSTÈME DE VÉRIFICATION AVEC MOTS-CLÉS ---
+        function verifierCode() {
+            const codeEleve = document.getElementById('code-utilisateur').value;
+            const div = document.getElementById('zone-correction');
+            div.className = "alert";
+            
+            // On découpe la solution entrée par l'admin en "mots" ou "bouts de code" importants
+            // (marche aussi si l'admin est allé à la ligne)
+            const motsAttendus = etapeActuelle.solution.trim().split(/[\s\n]+/).filter(m => m.length > 0);
+            
+            let toutEstLa = true;
+            
+            // On vérifie si CHAQUE mot de la solution est écrit quelque part dans la réponse de l'élève
+            motsAttendus.forEach(mot => {
+                if (!codeEleve.includes(mot)) {
+                    toutEstLa = false; // Il manque un mot obligatoire
+                }
+            });
+            
+            if (toutEstLa && motsAttendus.length > 0) {
+                div.innerText = "✅ Réponse correcte ! Félicitations.";
+                div.classList.add('alert-success');
+                document.getElementById('btn-terminer').classList.remove('d-none');
+            } else {
+                div.innerText = `❌ Ce n'est pas tout à fait ça. Relis bien la consigne, vérifie tes fautes d'orthographe et réessaie !`;
+                div.classList.add('alert-danger');
+            }
+        }
+
+        function marquerEtapeTerminee() {
+            let eleves = JSON.parse(localStorage.getItem('python_eleves')) || {};
+            if (!eleves[utilisateurActuel].includes(etapeActuelle.id)) eleves[utilisateurActuel].push(etapeActuelle.id);
+            localStorage.setItem('python_eleves', JSON.stringify(eleves));
+            chargerParcoursEleve();
+            changerPage('page-accueil');
+        }
+
+        // --- GESTION ADMINISTRATIVE ---
+        function ouvrirPanelAdmin() {
+            refreshDropdownCategories();
+            renderTableauGestion();
+            renderTableauSuivi();
+            changerPage('page-admin');
+        }
+
+        function switchOngletAdmin(onglet) {
+            document.getElementById('onglet-admin-gestion').style.display = onglet === 'gestion' ? 'block' : 'none';
+            document.getElementById('onglet-admin-eleves').style.display = onglet === 'eleves' ? 'block' : 'none';
+        }
+
+        function refreshDropdownCategories() {
+            const select = document.getElementById('admin-select-cat');
+            const categories = JSON.parse(localStorage.getItem('python_categories')) || [];
+            select.innerHTML = '';
+            categories.forEach(c => select.innerHTML += `<option value="${c}">${c}</option>`);
+        }
+
+        function toggleFormAdminFields() {
+            const type = document.getElementById('admin-type').value;
+            document.getElementById('admin-zone-cours').style.display = type === 'exercice_seul' ? 'none' : 'block';
+        }
+
+        function creerCategorie() {
+            const input = document.getElementById('admin-nom-cat');
+            const nom = input.value.trim();
+            if (!nom) return;
+            let categories = JSON.parse(localStorage.getItem('python_categories'));
+            if (categories.includes(nom)) return alert("Cette catégorie existe déjà.");
+            categories.push(nom);
+            localStorage.setItem('python_categories', JSON.stringify(categories));
+            input.value = "";
+            refreshDropdownCategories();
+            renderTableauGestion();
+        }
+
+        function sauvegarderNiveau() {
+            const idModif = document.getElementById('admin-id-niveau-modif').value;
+            const categorie = document.getElementById('admin-select-cat').value;
+            const type = document.getElementById('admin-type').value;
+            const titre = document.getElementById('admin-titre').value.trim();
+            const contenu = document.getElementById('admin-contenu').value.trim();
+            const consigne = document.getElementById('admin-consigne').value.trim();
+            const indice = document.getElementById('admin-indice').value.trim();
+            const solution = document.getElementById('admin-solution').value; // Garde les retours à la ligne
+
+            if (!titre || !consigne || !solution || !categorie) return alert("Veuillez remplir les champs obligatoires.");
+
+            let niveaux = JSON.parse(localStorage.getItem('python_niveaux'));
+
+            if (idModif) {
+                let index = niveaux.findIndex(n => n.id == idModif);
+                niveaux[index] = { id: parseInt(idModif), categorie, type, titre, contenu: type==='lecon'?contenu:'', consigne, indice, solution };
+                alert("Niveau modifié !");
+                annulerModificationNiveau();
+            } else {
+                const nouvelId = niveaux.length > 0 ? niveaux[niveaux.length - 1].id + 1 : 1;
+                niveaux.push({ id: nouvelId, categorie, type, titre, contenu: type==='lecon'?contenu:'', consigne, indice, solution });
+                alert("Niveau ajouté !");
+            }
+
+            localStorage.setItem('python_niveaux', JSON.stringify(niveaux));
+            
+            document.getElementById('admin-titre').value = "";
+            document.getElementById('admin-contenu').value = "";
+            document.getElementById('admin-consigne').value = "";
+            document.getElementById('admin-indice').value = "";
+            document.getElementById('admin-solution').value = "";
+            renderTableauGestion();
+        }
+
+        function chargerModifierNiveau(id) {
+            let niveaux = JSON.parse(localStorage.getItem('python_niveaux'));
+            let n = niveaux.find(x => x.id === id);
+            
+            document.getElementById('form-niveau-titre').innerText = "📝 Modifier le Niveau";
+            document.getElementById('admin-id-niveau-modif').value = n.id;
+            document.getElementById('admin-select-cat').value = n.categorie;
+            document.getElementById('admin-type').value = n.type;
+            document.getElementById('admin-titre').value = n.titre;
+            document.getElementById('admin-contenu').value = n.contenu;
+            document.getElementById('admin-consigne').value = n.consigne;
+            document.getElementById('admin-indice').value = n.indice || "";
+            document.getElementById('admin-solution').value = n.solution;
+            
+            document.getElementById('btn-admin-soumettre-niveau').innerText = "Enregistrer les modifications";
+            document.getElementById('btn-admin-soumettre-niveau').className = "btn btn-warning btn-sm w-100 mt-2";
+            document.getElementById('btn-admin-annuler-modif').classList.remove('d-none');
+            toggleFormAdminFields();
+        }
+
+        function annulerModificationNiveau() {
+            document.getElementById('form-niveau-titre').innerText = "2. Ajouter un Niveau";
+            document.getElementById('admin-id-niveau-modif').value = "";
+            document.getElementById('admin-titre').value = "";
+            document.getElementById('admin-contenu').value = "";
+            document.getElementById('admin-consigne').value = "";
+            document.getElementById('admin-indice').value = "";
+            document.getElementById('admin-solution').value = "";
+            document.getElementById('btn-admin-soumettre-niveau').innerText = "Ajouter le Niveau";
+            document.getElementById('btn-admin-soumettre-niveau').className = "btn btn-success btn-sm w-100 mt-2";
+            document.getElementById('btn-admin-annuler-modif').classList.add('d-none');
+            toggleFormAdminFields();
+        }
+
+        function supprimerNiveau(id) {
+            if (!confirm("Supprimer ce niveau ?")) return;
+            let niveaux = JSON.parse(localStorage.getItem('python_niveaux'));
+            niveaux = niveaux.filter(n => n.id !== id);
+            localStorage.setItem('python_niveaux', JSON.stringify(niveaux));
+            renderTableauGestion();
+        }
+
+        function deplacerNiveau(index, direction) {
+            let niveaux = JSON.parse(localStorage.getItem('python_niveaux'));
+            if (direction === 'haut' && index > 0) {
+                let temp = niveaux[index];   niveaux[index] = niveaux[index - 1]; niveaux[index - 1] = temp;
+            } else if (direction === 'bas' && index < niveaux.length - 1) {
+                let temp = niveaux[index];   niveaux[index] = niveaux[index + 1]; niveaux[index + 1] = temp;
+            }
+            localStorage.setItem('python_niveaux', JSON.stringify(niveaux));
+            renderTableauGestion();
+        }
+
+        function renderTableauGestion() {
+            const tbody = document.getElementById('tableau-gestion-niveaux');
+            tbody.innerHTML = '';
+            const niveaux = JSON.parse(localStorage.getItem('python_niveaux')) || [];
+
+            niveaux.forEach((n, idx) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><span class="badge bg-secondary">${idx + 1}</span></td>
+                        <td><small>${n.categorie}</small></td>
+                        <td><span class="badge ${n.type==='lecon'?'bg-info text-dark':'bg-dark'}">${n.type==='lecon'?'Cours':'Exo'}</span></td>
+                        <td class="text-start"><strong>${n.titre}</strong></td>
+                        <td>
+                            <button class="btn btn-outline-dark btn-ordre" onclick="deplacerNiveau(${idx}, 'haut')">▲</button>
+                            <button class="btn btn-outline-dark btn-ordre" onclick="deplacerNiveau(${idx}, 'bas')">▼</button>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary py-0 px-2" onclick="chargerModifierNiveau(${n.id})">Modifier</button>
+                            <button class="btn btn-sm btn-danger py-0 px-2" onclick="supprimerNiveau(${n.id})">Suppr</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderTableauSuivi() {
+            const tbody = document.getElementById('tableau-suivi-eleves');
+            tbody.innerHTML = '';
+            const eleves = JSON.parse(localStorage.getItem('python_eleves')) || {};
+            const niveaux = JSON.parse(localStorage.getItem('python_niveaux')) || [];
+
+            Object.keys(eleves).forEach(prenom => {
+                let listIdValides = eleves[prenom];
+                let texteProgression = listIdValides.map(id => {
+                    let index = niveaux.findIndex(n => n.id === id);
+                    return index !== -1 ? `Niv ${index + 1}` : '';
+                }).filter(t => t !== '').join(', ') || "Aucun niveau";
+
+                tbody.innerHTML += `<tr><td class="fw-bold text-capitalize">${prenom}</td><td><span class="badge bg-success">${texteProgression}</span></td></tr>`;
+            });
+        }
+
+        function changerPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+    </script>
+</body>
+</html>
