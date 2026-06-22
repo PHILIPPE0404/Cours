@@ -20,7 +20,7 @@
             <div class="card p-4 shadow mx-auto" style="max-width: 400px; margin-top: 100px;">
                 <h3 class="text-center mb-4">Connexion 🐍</h3>
                 <div class="mb-3">
-                    <label class="form-label">Entrez votre prénom :</label>
+                    <label class="form-label">Entrez votre prénom (ou 'admin') :</label>
                     <input type="text" id="input-username" class="form-control" placeholder="Ex: Lucas">
                 </div>
                 <button class="btn btn-primary w-100" onclick="seConnecter()">Se connecter</button>
@@ -121,7 +121,7 @@
                             </div>
                             <div class="mb-2">
                                 <label class="form-label mb-0"><small>Solution attendue (Mots obligatoires) :</small></label>
-                                <textarea id="admin-solution" rows="3" class="form-control form-control-sm font-monospace" placeholder="Ex: print&#10;&quot;Hello&quot;&#10;Chaque mot/symbole important doit y être."></textarea>
+                                <textarea id="admin-solution" rows="3" class="form-control form-control-sm font-monospace" placeholder="Chaque mot/symbole important doit y être."></textarea>
                             </div>
                             <button id="btn-admin-soumettre-niveau" class="btn btn-success btn-sm w-100 mt-2" onclick="sauvegarderNiveau()">Ajouter le Niveau</button>
                             <button id="btn-admin-annuler-modif" class="btn btn-secondary btn-sm w-100 mt-1 d-none" onclick="annulerModificationNiveau()">Annuler la modification</button>
@@ -167,10 +167,38 @@
     </div>
 
     <script>
-        // --- DONNÉES PAR DÉFAUT SI VIDE ---
+        // --- DONNÉES PAR DÉFAUT REMPLACÉES ---
         const CAT_INITIALES = ["Bases du Python"];
         const COURS_INITIALIFS = [
-            { id: 1, categorie: "Bases du Python", type: "lecon", titre: "La fonction Print", contenu: "En Python, on utilise print('Texte') pour afficher.", consigne: "Affiche Hello World", indice: "Pense bien à utiliser le mot 'print'.", solution: "print\n'Hello World'" }
+            {
+                "id": 1,
+                "categorie": "Bases du Python",
+                "type": "lecon",
+                "titre": "La fonction Print",
+                "contenu": "En Python, pour afficher du texte, on utilise print().\nExemple : print('Bonjour')",
+                "consigne": "Écris le code Python pour afficher le texte : Hello World",
+                "indice": "N'oublie pas d'utiliser print() avec des guillemets autour de Hello World.",
+                "solution": "print\n'Hello World'"
+            },
+            {
+                "id": 2,
+                "categorie": "Bases du Python",
+                "type": "exercice_seul",
+                "titre": "Défi : Corriger le Print",
+                "consigne": "Écris le code exact pour afficher le chiffre 50 (sans guillemets)",
+                "indice": "Pour afficher un chiffre sans guillemets, mets-le directement entre les parenthèses : print(50)",
+                "solution": "print\n50"
+            },
+            {
+                "id": 3,
+                "categorie": "Bases du Python",
+                "type": "lecon",
+                "titre": "Les Variables",
+                "contenu": "Une variable permet de stocker une information.\nExemple : x = 5",
+                "consigne": "Crée une variable nommée 'age' et donne-lui la valeur 18",
+                "indice": "Écris le nom de la variable, puis le signe =, puis le nombre 18.",
+                "solution": "age\n=\n18"
+            }
         ];
 
         if (!localStorage.getItem('python_categories')) localStorage.setItem('python_categories', JSON.stringify(CAT_INITIALES));
@@ -284,22 +312,18 @@
             document.getElementById('texte-indice-eleve').classList.remove('d-none');
         }
 
-        // --- NOUVEAU SYSTÈME DE VÉRIFICATION AVEC MOTS-CLÉS ---
+        // --- VÉRIFICATION PAR MOTS-CLÉS ---
         function verifierCode() {
             const codeEleve = document.getElementById('code-utilisateur').value;
             const div = document.getElementById('zone-correction');
             div.className = "alert";
             
-            // On découpe la solution entrée par l'admin en "mots" ou "bouts de code" importants
-            // (marche aussi si l'admin est allé à la ligne)
             const motsAttendus = etapeActuelle.solution.trim().split(/[\s\n]+/).filter(m => m.length > 0);
-            
             let toutEstLa = true;
             
-            // On vérifie si CHAQUE mot de la solution est écrit quelque part dans la réponse de l'élève
             motsAttendus.forEach(mot => {
                 if (!codeEleve.includes(mot)) {
-                    toutEstLa = false; // Il manque un mot obligatoire
+                    toutEstLa = false;
                 }
             });
             
@@ -367,7 +391,7 @@
             const contenu = document.getElementById('admin-contenu').value.trim();
             const consigne = document.getElementById('admin-consigne').value.trim();
             const indice = document.getElementById('admin-indice').value.trim();
-            const solution = document.getElementById('admin-solution').value; // Garde les retours à la ligne
+            const solution = document.getElementById('admin-solution').value;
 
             if (!titre || !consigne || !solution || !categorie) return alert("Veuillez remplir les champs obligatoires.");
 
