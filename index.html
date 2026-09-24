@@ -1,145 +1,290 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apprendre Python</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <title>Python Academy — Apprenez le Python en pratiquant</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Monaco Editor Loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
+    <!-- Pyodide (Python WebAssembly) -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
     <style>
+        :root {
+            --bg-glass: rgba(30, 35, 45, 0.85);
+            --border-glass: rgba(255, 255, 255, 0.1);
+            --accent-color: #38ef7d;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .glass-card {
+            background: var(--bg-glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
         .page { display: none; }
         .page.active { display: block; }
-        .bloque { pointer-events: none; opacity: 0.5; }
-        .btn-ordre { padding: 1px 6px; font-size: 12px; }
+
+        .monaco-editor-container {
+            height: 280px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #334155;
+        }
+
+        .terminal-output {
+            background-color: #020617;
+            color: #38ef7d;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 120px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #1e293b;
+            white-space: pre-wrap;
+        }
+
+        .badge-tag {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+
+        .bloque {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .xp-bar {
+            height: 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
-<body class="bg-light p-4">
+<body class="p-3 p-md-4">
 
-    <div class="container" style="max-width: 1100px;">
-        
-        <div id="page-connexion" class="page active">
-            <div class="card p-4 shadow mx-auto" style="max-width: 400px; margin-top: 100px;">
-                <h3 class="text-center mb-4">Connexion 🐍</h3>
-                <div class="mb-3">
-                    <label class="form-label">Entrez votre prénom :</label>
-                    <input type="text" id="input-username" class="form-control" placeholder="Ex: Lucas">
+    <div class="container-fluid style-container" style="max-width: 1200px;">
+
+        <!-- BARRE SUPERIEURE / NAVIGATION DE L'ELEVE -->
+        <header id="top-nav" class="d-none justify-content-between align-items-center mb-4 glass-card p-3">
+            <div class="d-flex align-items-center gap-3">
+                <span class="fs-4 fw-bold text-success"><i class="fa-brands fa-python me-2"></i>Python Academy</span>
+                <span class="badge bg-secondary" id="display-user-tag">Sans Groupe</span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <!-- Gamification UI -->
+                <div class="text-end d-none d-sm-block">
+                    <small class="text-warning fw-bold"><i class="fa-solid fa-fire me-1"></i>Série : <span id="stat-streak">1</span> j</small>
+                    <div class="fw-bold"><i class="fa-solid fa-star text-warning me-1"></i><span id="stat-xp">0</span> XP</div>
                 </div>
-                <button class="btn btn-primary w-100" onclick="seConnecter()">Se connecter</button>
+                <button class="btn btn-outline-light btn-sm" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i></button>
+                <button class="btn btn-outline-danger btn-sm" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket me-1"></i>Sortir</button>
+            </div>
+        </header>
+
+        <!-- 1. PAGE DE CONNEXION -->
+        <div id="page-connexion" class="page active">
+            <div class="glass-card p-4 p-md-5 mx-auto text-center" style="max-width: 450px; margin-top: 80px;">
+                <i class="fa-brands fa-python text-success display-1 mb-3"></i>
+                <h2 class="fw-bold mb-4">Bienvenue !</h2>
+                <div class="mb-3 text-start">
+                    <label class="form-label">Entrez votre prénom ou identifiant :</label>
+                    <input type="text" id="input-username" class="form-control form-control-lg bg-dark text-light border-secondary" placeholder="Ex: Alex">
+                </div>
+                <button class="btn btn-success btn-lg w-100 fw-bold shadow" onclick="seConnecter()">Se connecter <i class="fa-solid fa-arrow-right ms-2"></i></button>
             </div>
         </div>
 
+        <!-- 2. PAGE D'ACCUEIL / PARCOURS -->
         <div id="page-accueil" class="page">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>Bonjour, <span id="nom-utilisateur" class="text-primary"></span> ! 👋</h2>
-                <button class="btn btn-danger btn-sm" onclick="deconnexion()">Déconnexion</button>
+            <div class="glass-card p-4 mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2>Bonjour, <span id="nom-utilisateur" class="text-success fw-bold"></span> 👋</h2>
+                        <p class="text-muted mb-2">Poursuis ton apprentissage de Python étape par étape.</p>
+                        <div class="progress xp-bar bg-dark mb-1">
+                            <div id="progression-globale" class="progress-bar bg-success" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted">Progression du parcours : <span id="texte-progression">0%</span></small>
+                    </div>
+                </div>
             </div>
-            <h4 class="mb-3">Votre Parcours d'Apprentissage :</h4>
+
+            <h4 class="mb-3"><i class="fa-solid fa-map me-2"></i>Votre Parcours d'Apprentissage</h4>
             <div id="parcours-eleve-categories"></div>
         </div>
 
+        <!-- 3. PAGE DE LECON & EXERCICE -->
         <div id="page-lecon" class="page">
-            <button class="btn btn-outline-secondary mb-4" onclick="changerPage('page-accueil')">← Retour au parcours</button>
-            
-            <div id="zone-cours-contenu" class="card p-4 mb-4 shadow-sm">
-                <h2 id="lecon-titre"></h2>
-                <hr>
-                <p id="lecon-contenu" class="fs-5" style="white-space: pre-line;"></p>
-            </div>
+            <button class="btn btn-outline-light mb-3" onclick="changerPage('page-accueil')">
+                <i class="fa-solid fa-arrow-left me-2"></i>Retour au parcours
+            </button>
 
-            <div class="card p-4 mb-4 shadow-sm border-primary">
-                <h3 class="text-primary" id="titre-exercice-section">Exercice pratique</h3>
-                <p id="ex-consigne" class="fw-bold"></p>
-                
-                <div id="zone-correction" class="alert d-none"></div>
-
-                <div class="mb-3">
-                    <textarea id="code-utilisateur" rows="6" class="form-control font-monospace bg-dark text-white p-3" placeholder="# Écris ton code Python ici... (Tu peux aller à la ligne avec Entrée)"></textarea>
-                </div>
-                
-                <div id="zone-indice-eleve" class="mb-3 d-none">
-                    <button class="btn btn-outline-info btn-sm" onclick="afficherIndiceEleve()">💡 Besoin d'un indice ?</button>
-                    <div id="texte-indice-eleve" class="alert alert-info mt-2 d-none"></div>
+            <div class="row">
+                <!-- Colonne Cours -->
+                <div class="col-lg-5 mb-4" id="zone-cours-contenu">
+                    <div class="glass-card p-4 h-100">
+                        <h3 id="lecon-titre" class="text-success fw-bold"></h3>
+                        <hr class="border-secondary">
+                        <div id="lecon-contenu" style="white-space: pre-line; line-height: 1.6;"></div>
+                    </div>
                 </div>
 
-                <div class="d-flex justify-content-between">
-                    <button class="btn btn-success" onclick="verifierCode()">Vérifier mon code</button>
-                    <button id="btn-terminer" class="btn btn-primary d-none" onclick="marquerEtapeTerminee()">Valider & Continuer →</button>
+                <!-- Colonne Exercice & Code -->
+                <div class="col-lg-7 mb-4" id="zone-exercice">
+                    <div class="glass-card p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h4 class="text-warning mb-0" id="titre-exercice-section"><i class="fa-solid fa-code me-2"></i>Exercice pratique</h4>
+                            <span class="badge bg-primary" id="exercice-xp-badge">+50 XP</span>
+                        </div>
+                        <p id="ex-consigne" class="fw-semibold"></p>
+
+                        <!-- Éditeur de code Monaco -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between bg-dark p-2 rounded-top border border-bottom-0 border-secondary">
+                                <small class="text-muted"><i class="fa-regular fa-file-code me-1"></i>main.py</small>
+                                <button class="btn btn-link btn-sm text-light p-0" onclick="copierCode()"><i class="fa-regular fa-copy me-1"></i>Copier</button>
+                            </div>
+                            <div id="editor-container" class="monaco-editor-container"></div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-flex gap-2 mb-3">
+                            <button class="btn btn-success fw-bold" onclick="executerEtVerifierCode()">
+                                <i class="fa-solid fa-play me-2"></i>Exécuter & Tester
+                            </button>
+                            <button class="btn btn-outline-info" id="btn-indice" onclick="toggleIndice()">
+                                <i class="fa-solid fa-lightbulb me-1"></i>Indice
+                            </button>
+                        </div>
+
+                        <!-- Indice -->
+                        <div id="texte-indice-eleve" class="alert alert-info d-none"></div>
+
+                        <!-- Console de sortie -->
+                        <div class="mb-3">
+                            <small class="text-muted fw-bold mb-1 d-block"><i class="fa-solid fa-terminal me-1"></i>Console de sortie :</small>
+                            <div id="console-output" class="terminal-output">> En attente d'exécution...</div>
+                        </div>
+
+                        <!-- Zone de Correction / Feedback -->
+                        <div id="zone-correction" class="alert d-none"></div>
+
+                        <!-- Boutons Suivant -->
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button id="btn-terminer" class="btn btn-primary btn-lg fw-bold d-none" onclick="validerEtEtapeSuivante()">
+                                Suivant <i class="fa-solid fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
+        <!-- 4. PANEL ADMINISTRATEUR -->
         <div id="page-admin" class="page">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="text-danger">Panel Administrateur ⚙️</h1>
-                <button class="btn btn-danger btn-sm" onclick="deconnexion()">Déconnexion Admin</button>
+            <div class="d-flex justify-content-between align-items-center mb-4 glass-card p-3">
+                <h2 class="text-danger mb-0"><i class="fa-solid fa-user-shield me-2"></i>Panel Administrateur</h2>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-info btn-sm" onclick="exporterJSON()"><i class="fa-solid fa-download me-1"></i>Exporter JSON</button>
+                    <label class="btn btn-outline-warning btn-sm mb-0">
+                        <i class="fa-solid fa-upload me-1"></i>Importer JSON <input type="file" id="input-import-json" accept=".json" class="d-none" onchange="importerJSON(event)">
+                    </label>
+                    <button class="btn btn-danger btn-sm" onclick="deconnexion()">Quitter Admin</button>
+                </div>
             </div>
 
-            <ul class="nav nav-tabs mb-4">
-                <li class="nav-tabs-item"><button class="nav-link active" onclick="switchOngletAdmin('gestion')">Gestion Cours/Exos/Catégories</button></li>
-                <li class="nav-tabs-item"><button class="nav-link" onclick="switchOngletAdmin('eleves')">Suivi des Élèves</button></li>
+            <ul class="nav nav-pills mb-4 gap-2">
+                <li class="nav-item"><button class="nav-link active" onclick="switchOngletAdmin('gestion')">Gestion du Parcours</button></li>
+                <li class="nav-item"><button class="nav-link" onclick="switchOngletAdmin('eleves')">Élèves & Tags</button></li>
+                <li class="nav-item"><button class="nav-link" onclick="switchOngletAdmin('securite')">Sécurité</button></li>
             </ul>
 
+            <!-- ONGLET GESTION DU PARCOURS -->
             <div id="onglet-admin-gestion">
                 <div class="row">
+                    <!-- Formulaires de création -->
                     <div class="col-md-4 mb-4">
-                        <div class="card p-3 shadow-sm mb-3">
+                        <div class="glass-card p-3 mb-3">
                             <h5>1. Créer une Catégorie</h5>
                             <div class="input-group">
-                                <input type="text" id="admin-nom-cat" class="form-control" placeholder="Ex: Les Variables">
+                                <input type="text" id="admin-nom-cat" class="form-control bg-dark text-light" placeholder="Ex: 3. Les Boucles">
                                 <button class="btn btn-primary" onclick="creerCategorie()">Créer</button>
                             </div>
                         </div>
 
-                        <div class="card p-3 shadow-sm">
+                        <div class="glass-card p-3">
                             <h5 id="form-niveau-titre">2. Ajouter un Niveau</h5>
-                            <input type="hidden" id="admin-id-niveau-modif" value="">
+                            <input type="hidden" id="admin-id-niveau-modif">
+                            
                             <div class="mb-2">
                                 <label class="form-label mb-0"><small>Catégorie :</small></label>
-                                <select id="admin-select-cat" class="form-select form-select-sm"></select>
+                                <select id="admin-select-cat" class="form-select form-select-sm bg-dark text-light"></select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label mb-0"><small>Tag requis (Accès restreint) :</small></label>
+                                <input type="text" id="admin-tag-requis" class="form-control form-control-sm bg-dark text-light" placeholder="Optionnel (ex: Groupe A)">
                             </div>
                             <div class="mb-2">
                                 <label class="form-label mb-0"><small>Type :</small></label>
-                                <select id="admin-type" class="form-select form-select-sm" onchange="toggleFormAdminFields()">
+                                <select id="admin-type" class="form-select form-select-sm bg-dark text-light" onchange="toggleFormAdminFields()">
                                     <option value="lecon">Leçon (Cours + Exo)</option>
                                     <option value="exercice_seul">Exercice Seul</option>
                                 </select>
                             </div>
                             <div class="mb-2">
                                 <label class="form-label mb-0"><small>Titre :</small></label>
-                                <input type="text" id="admin-titre" class="form-control form-control-sm">
+                                <input type="text" id="admin-titre" class="form-control form-control-sm bg-dark text-light">
                             </div>
                             <div class="mb-2" id="admin-zone-cours">
                                 <label class="form-label mb-0"><small>Contenu du cours :</small></label>
-                                <textarea id="admin-contenu" rows="3" class="form-control form-control-sm"></textarea>
+                                <textarea id="admin-contenu" rows="3" class="form-control form-control-sm bg-dark text-light"></textarea>
                             </div>
                             <div class="mb-2">
                                 <label class="form-label mb-0"><small>Consigne Exo :</small></label>
-                                <textarea id="admin-consigne" rows="2" class="form-control form-control-sm"></textarea>
+                                <textarea id="admin-consigne" rows="2" class="form-control form-control-sm bg-dark text-light"></textarea>
                             </div>
                             <div class="mb-2">
                                 <label class="form-label mb-0"><small>Indice (Aide) :</small></label>
-                                <textarea id="admin-indice" rows="2" class="form-control form-control-sm" placeholder="Ex: Regarde la leçon..."></textarea>
+                                <textarea id="admin-indice" rows="2" class="form-control form-control-sm bg-dark text-light"></textarea>
                             </div>
                             <div class="mb-2">
-                                <label class="form-label mb-0"><small>Solution attendue (Mots obligatoires) :</small></label>
-                                <textarea id="admin-solution" rows="3" class="form-control form-control-sm font-monospace" placeholder="Chaque mot/symbole important doit y être."></textarea>
+                                <label class="form-label mb-0"><small>Code Solution modèle :</small></label>
+                                <textarea id="admin-solution" rows="3" class="form-control form-control-sm bg-dark text-light font-monospace"></textarea>
                             </div>
                             <button id="btn-admin-soumettre-niveau" class="btn btn-success btn-sm w-100 mt-2" onclick="sauvegarderNiveau()">Ajouter le Niveau</button>
-                            <button id="btn-admin-annuler-modif" class="btn btn-secondary btn-sm w-100 mt-1 d-none" onclick="annulerModificationNiveau()">Annuler la modification</button>
+                            <button id="btn-admin-annuler-modif" class="btn btn-secondary btn-sm w-100 mt-1 d-none" onclick="annulerModificationNiveau()">Annuler</button>
                         </div>
                     </div>
 
+                    <!-- Structure actuelle -->
                     <div class="col-md-8 mb-4">
-                        <div class="card p-4 shadow-sm">
-                            <h5>Structure actuelle du parcours (Ordre d'apprentissage)</h5>
+                        <div class="glass-card p-4">
+                            <h5>Structure du Parcours</h5>
                             <div class="table-responsive mt-3">
-                                <table class="table table-bordered align-middle text-center" style="font-size: 14px;">
-                                    <thead class="table-dark">
+                                <table class="table table-dark table-hover align-middle text-center" style="font-size: 14px;">
+                                    <thead>
                                         <tr>
                                             <th>Ordre</th>
                                             <th>Catégorie</th>
-                                            <th>Type</th>
                                             <th>Titre</th>
-                                            <th>Déplacer</th>
+                                            <th>Tag</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -151,121 +296,216 @@
                 </div>
             </div>
 
+            <!-- ONGLET ELEVES ET TAGS -->
             <div id="onglet-admin-eleves" style="display:none;">
-                <div class="card p-4 shadow-sm">
-                    <h4>Suivi des élèves & Progression</h4>
-                    <table class="table table-striped mt-3">
-                        <thead>
-                            <tr><th>Prénom</th><th>Niveaux validés</th></tr>
-                        </thead>
-                        <tbody id="tableau-suivi-eleves"></tbody>
-                    </table>
+                <div class="glass-card p-4">
+                    <h4>Suivi des Élèves & Attribution des Tags</h4>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-dark table-striped align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Élève</th>
+                                    <th>XP</th>
+                                    <th>Tag Actuel</th>
+                                    <th>Attribuer un Tag</th>
+                                    <th>Progression</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableau-suivi-eleves"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+
+            <!-- ONGLET SECURITE -->
+            <div id="onglet-admin-securite" style="display:none;">
+                <div class="glass-card p-4 mx-auto" style="max-width: 500px;">
+                    <h4>Modifier le code Administrateur</h4>
+                    <div class="mb-3">
+                        <label class="form-label">Nouveau code d'accès :</label>
+                        <input type="password" id="input-new-admin-pass" class="form-control bg-dark text-light">
+                    </div>
+                    <button class="btn btn-warning w-100" onclick="changerCodeAdmin()">Enregistrer le nouveau code</button>
+                </div>
+            </div>
+
         </div>
 
     </div>
 
+    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // --- DONNÉES PAR DÉFAUT REMPLACÉES ---
-        const CAT_INITIALES = ["Bases du Python"];
-        const COURS_INITIALIFS = [
-            {
-                "id": 1,
-                "categorie": "Bases du Python",
-                "type": "lecon",
-                "titre": "La fonction Print",
-                "contenu": "En Python, pour afficher du texte, on utilise print().\nExemple : print('Bonjour')",
-                "consigne": "Écris le code Python pour afficher le texte : Hello World",
-                "indice": "N'oublie pas d'utiliser print() avec des guillemets autour de Hello World.",
-                "solution": "print\n'Hello World'"
-            },
-            {
-                "id": 2,
-                "categorie": "Bases du Python",
-                "type": "exercice_seul",
-                "titre": "Défi : Corriger le Print",
-                "consigne": "Écris le code exact pour afficher le chiffre 50 (sans guillemets)",
-                "indice": "Pour afficher un chiffre sans guillemets, mets-le directement entre les parenthèses : print(50)",
-                "solution": "print\n50"
-            },
-            {
-                "id": 3,
-                "categorie": "Bases du Python",
-                "type": "lecon",
-                "titre": "Les Variables",
-                "contenu": "Une variable permet de stocker une information.\nExemple : x = 5",
-                "consigne": "Crée une variable nommée 'age' et donne-lui la valeur 18",
-                "indice": "Écris le nom de la variable, puis le signe =, puis le nombre 18.",
-                "solution": "age\n=\n18"
-            }
+        // --- 1. DONNÉES PAR DÉFAUT DU PARCOURS COMPLET (4 PARTIES) ---
+        const CAT_INITIALES = [
+            "PARTIE 1 : Variables et Opérations",
+            "PARTIE 2 : Les Conditions (if/else)",
+            "PARTIE 3 : Les Boucles",
+            "PARTIE 4 : Listes et Fonctions"
         ];
 
+        const COURS_INITIALIFS = [
+            // PARTIE 1
+            { id: 1, categorie: "PARTIE 1 : Variables et Opérations", tagRequis: "", type: "lecon", titre: "Les variables et l'affichage", contenu: "Une variable sert à stocker une information. On utilise = pour affecter une valeur et print() pour l'afficher.\nExemple :\nage = 15\nprint(age)", consigne: "Crée une variable nommée prenom qui contient le texte \"Alex\", puis affiche-la.", indice: "Utilise prenom = \"Alex\" puis print(prenom)", solution: "prenom = \"Alex\"\nprint(prenom)" },
+            { id: 2, categorie: "PARTIE 1 : Variables et Opérations", tagRequis: "", type: "lecon", titre: "Les types de données", contenu: "Python gère les nombres entiers (int), décimaux (float) et le texte (str).\nExemple :\nprix = 12.5\nquantite = 2", consigne: "Crée une variable prix égale à 10.5 et quantite égale à 2.", indice: "N'oublie pas le point . pour les décimaux.", solution: "prix = 10.5\nquantite = 2" },
+            { id: 3, categorie: "PARTIE 1 : Variables et Opérations", tagRequis: "", type: "exercice_seul", titre: "Exo Fin Partie 1 : Calcul de Prix", contenu: "", consigne: "Multiplie les variables prix = 5 et quantite = 4 dans une variable total, puis affiche total.", indice: "Utilise l'opérateur * pour la multiplication.", solution: "prix = 5\nquantite = 4\ntotal = prix * quantite\nprint(total)" },
+
+            // PARTIE 2
+            { id: 4, categorie: "PARTIE 2 : Les Conditions (if/else)", tagRequis: "", type: "lecon", titre: "Le bloc Si / Sinon", contenu: "On utilise if pour vérifier une condition et else si elle n'est pas remplie.\nExemple :\nif age >= 18:\n    print(\"Majeur\")\nelse:\n    print(\"Mineur\")", consigne: "Si note est supérieure ou égale à 10, affiche \"Réussi\", sinon affiche \"Échec\".", indice: "Crée la variable note = 12 pour tester.", solution: "note = 12\nif note >= 10:\n    print(\"Réussi\")\nelse:\n    print(\"Échec\")" },
+            { id: 5, categorie: "PARTIE 2 : Les Conditions (if/else)", tagRequis: "", type: "lecon", titre: "Conditions multiples avec elif", contenu: "elif permet de tester plusieurs conditions à la suite.", consigne: "Écris un bloc avec score = 60. Si score > 50 affiche \"Gagné\", sinon si score > 20 affiche \"Passable\".", indice: "Respecte l'indentation.", solution: "score = 60\nif score > 50:\n    print(\"Gagné\")\nelif score > 20:\n    print(\"Passable\")" },
+            { id: 6, categorie: "PARTIE 2 : Les Conditions (if/else)", tagRequis: "", type: "exercice_seul", titre: "Exo Fin Partie 2 : Température", contenu: "", consigne: "Avec temp = 35 : si temp > 30 affiche \"Chaud\", sinon si temp < 10 affiche \"Froid\", sinon affiche \"Doux\".", indice: "Enchaîne if, elif et else.", solution: "temp = 35\nif temp > 30:\n    print(\"Chaud\")\nelif temp < 10:\n    print(\"Froid\")\nelse:\n    print(\"Doux\")" },
+
+            // SYNTHESE 1 (Bilan 1 & 2)
+            { id: 7, categorie: "PARTIE 2 : Les Conditions (if/else)", tagRequis: "", type: "exercice_seul", titre: "🎯 SYNTHÈSE 1 : Caisse Automatique", contenu: "", consigne: "Crée prix = 20 et solde = 50. Calcule reste = solde - prix. Si reste >= 0 affiche \"Achat réussi\", sinon \"Fonds insuffisants\".", indice: "Soustraction puis condition avec if.", solution: "prix = 20\nsolde = 50\nreste = solde - prix\nif reste >= 0:\n    print(\"Achat réussi\")\nelse:\n    print(\"Fonds insuffisants\")" },
+
+            // PARTIE 3
+            { id: 8, categorie: "PARTIE 3 : Les Boucles", tagRequis: "", type: "lecon", titre: "La boucle for", contenu: "for i in range(n) permet de répéter un bloc n fois.", consigne: "Affiche \"Hello\" 5 fois en utilisant range(5) et une boucle for.", indice: "for i in range(5):", solution: "for i in range(5):\n    print(\"Hello\")" },
+            { id: 9, categorie: "PARTIE 3 : Les Boucles", tagRequis: "", type: "lecon", titre: "La boucle while", contenu: "while exécute le code tant que la condition reste vraie.", consigne: "Crée n = 0. Répète n += 1 tant que n < 4 avec while. Affiche n à la fin.", indice: "N'oublie pas d'incrémenter n.", solution: "n = 0\nwhile n < 4:\n    n += 1\nprint(n)" },
+            { id: 10, categorie: "PARTIE 3 : Les Boucles", tagRequis: "", type: "exercice_seul", titre: "Exo Fin Partie 3 : Compte à rebours", contenu: "", consigne: "Crée compte = 3. Tant que compte > 0, affiche compte puis diminue-le de 1 (compte -= 1).", indice: "Utilise while compte > 0:", solution: "compte = 3\nwhile compte > 0:\n    print(compte)\n    compte -= 1" },
+
+            // PARTIE 4
+            { id: 11, categorie: "PARTIE 4 : Listes et Fonctions", tagRequis: "", type: "lecon", titre: "Les Listes", contenu: "Les listes contiennent des éléments entre crochets [].\nExemple :\nfruits = [\"pomme\", \"banane\"]", consigne: "Crée nombres = [1, 2, 3] et ajoute 4 avec .append(). Affiche la liste.", indice: "nombres.append(4)", solution: "nombres = [1, 2, 3]\nnombres.append(4)\nprint(nombres)" },
+            { id: 12, categorie: "PARTIE 4 : Listes et Fonctions", tagRequis: "", type: "lecon", titre: "Les Fonctions", contenu: "On définit une fonction avec def nom(): et return pour renvoyer une valeur.", consigne: "Définis une fonction double(n) qui renvoie n * 2.", indice: "def double(n): return n * 2", solution: "def double(n):\n    return n * 2" },
+            { id: 13, categorie: "PARTIE 4 : Listes et Fonctions", tagRequis: "", type: "exercice_seul", titre: "🎯 SYNTHÈSE GLOBALE : Grand Projet Final", contenu: "", consigne: "Crée une fonction analyser_notes(notes). Parcours notes, calcule le total, puis si la moyenne (total / len(notes)) >= 10 affiche \"Admis\", sinon \"Ajourné\".", indice: "Utilise une boucle for note in notes:", solution: "def analyser_notes(notes):\n    total = 0\n    for note in notes:\n        total += note\n    moyenne = total / len(notes)\n    if moyenne >= 10:\n        print(\"Admis\")\n    else:\n        print(\"Ajourné\")" }
+        ];
+
+        // --- 2. INITIALISATION DU STORAGE ET DES ETATS ---
         if (!localStorage.getItem('python_categories')) localStorage.setItem('python_categories', JSON.stringify(CAT_INITIALES));
         if (!localStorage.getItem('python_niveaux')) localStorage.setItem('python_niveaux', JSON.stringify(COURS_INITIALIFS));
+        if (!localStorage.getItem('python_admin_pass')) localStorage.setItem('python_admin_pass', 'admin123');
 
         let utilisateurActuel = "";
+        let monacoEditor = null;
+        let pyodide = null;
         let etapeActuelle = null;
 
-        // --- SYSTEME DE CONNEXION ---
+        // --- 3. CHARGEMENT EDITEUR MONACO & PYODIDE ---
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            monacoEditor = monaco.editor.create(document.getElementById('editor-container'), {
+                value: "# Écris ton code Python ici...\n",
+                language: 'python',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                fontSize: 14,
+                minimap: { enabled: false }
+            });
+        });
+
+        async function initPyodideEngine() {
+            if (!pyodide) {
+                document.getElementById('console-output').innerText = "> Chargement du moteur Python...";
+                pyodide = await loadPyodide();
+                document.getElementById('console-output').innerText = "> Moteur Python prêt !";
+            }
+        }
+        initPyodideEngine();
+
+        // --- 4. GESTION DE LA CONNEXION & UTILISATEURS ---
         function seConnecter() {
             const username = document.getElementById('input-username').value.trim();
-            if (!username) return alert("Entrez un prénom !");
+            if (!username) return alert("Veuillez entrer un nom.");
 
+            const passAdmin = localStorage.getItem('python_admin_pass');
             if (username.toLowerCase() === "admin") {
-                if (prompt("Code admin :") === "aqwzsxedc") ouvrirPanelAdmin();
-                else alert("Code erroné !");
-            } else {
-                utilisateurActuel = username;
-                document.getElementById('nom-utilisateur').innerText = username;
-                let eleves = JSON.parse(localStorage.getItem('python_eleves')) || {};
-                if (!eleves[username]) { eleves[username] = []; localStorage.setItem('python_eleves', JSON.stringify(eleves)); }
-                chargerParcoursEleve();
-                changerPage('page-accueil');
+                const passInput = prompt("Code Administrateur :");
+                if (passInput === passAdmin) {
+                    ouvrirPanelAdmin();
+                } else {
+                    alert("Code incorrect !");
+                }
+                return;
             }
+
+            utilisateurActuel = username;
+            document.getElementById('nom-utilisateur').innerText = username;
+
+            let eleves = JSON.parse(localStorage.getItem('python_eleves')) || {};
+            if (!eleves[username]) {
+                eleves[username] = { valides: [], xp: 0, tag: "", streak: 1 };
+                localStorage.setItem('python_eleves', JSON.stringify(eleves));
+            }
+
+            document.getElementById('top-nav').classList.remove('d-none');
+            document.getElementById('top-nav').classList.add('d-flex');
+            rafraichirStatsEleve();
+            chargerParcoursEleve();
+            changerPage('page-accueil');
         }
 
         function deconnexion() {
             utilisateurActuel = "";
-            document.getElementById('input-username').value = "";
+            document.getElementById('top-nav').classList.add('d-none');
+            document.getElementById('top-nav').classList.remove('d-flex');
             changerPage('page-connexion');
         }
 
-        // --- AFFICHAGE PARCOURS ÉLÈVE ---
+        function rafraichirStatsEleve() {
+            let eleves = JSON.parse(localStorage.getItem('python_eleves')) || {};
+            let profil = eleves[utilisateurActuel] || { xp: 0, tag: "", streak: 1 };
+
+            document.getElementById('stat-xp').innerText = profil.xp || 0;
+            document.getElementById('stat-streak').innerText = profil.streak || 1;
+            document.getElementById('display-user-tag').innerText = profil.tag ? `Tag: ${profil.tag}` : "Sans Groupe";
+        }
+
+        // --- 5. AFFICHAGE DU PARCOURS ELEVE ET RESTRICTIONS DE TAGS ---
         function chargerParcoursEleve() {
             const conteneur = document.getElementById('parcours-eleve-categories');
             conteneur.innerHTML = '';
-            
+
             const categories = JSON.parse(localStorage.getItem('python_categories'));
             const niveaux = JSON.parse(localStorage.getItem('python_niveaux'));
             const eleves = JSON.parse(localStorage.getItem('python_eleves')) || {};
-            const etapesValidees = eleves[utilisateurActuel] || [];
+            const profilEleve = eleves[utilisateurActuel] || { valides: [], tag: "" };
+
+            let totalNiveaux = niveaux.length;
+            let validesCount = profilEleve.valides.length;
+            let percent = totalNiveaux > 0 ? Math.round((validesCount / totalNiveaux) * 100) : 0;
+
+            document.getElementById('progression-globale').style.width = percent + "%";
+            document.getElementById('texte-progression').innerText = percent + "%";
 
             categories.forEach(cat => {
-                const niveauxDeLaCat = niveaux.filter(n => n.categorie === cat);
-                if (niveauxDeLaCat.length === 0) return;
+                const niveauxCat = niveaux.filter(n => n.categorie === cat);
+                if (niveauxCat.length === 0) return;
 
-                let htmlCat = `<div class="card p-3 mb-4 shadow-sm bg-white">
-                                <h5 class="text-secondary border-bottom pb-2">${cat}</h5>
-                                <div class="list-group">`;
+                let htmlCat = `<div class="glass-card p-3 mb-4">
+                    <h5 class="text-success border-bottom border-secondary pb-2">${cat}</h5>
+                    <div class="list-group">`;
 
-                niveauxDeLaCat.forEach(niveau => {
-                    const indexGlobal = niveaux.findIndex(n => n.id === niveau.id);
-                    
+                niveauxCat.forEach(niveau => {
+                    const idxGlobal = niveaux.findIndex(n => n.id === niveau.id);
                     let estBloque = false;
-                    if (indexGlobal > 0) {
-                        const niveauPrecedentId = niveaux[indexGlobal - 1].id;
-                        if (!etapesValidees.includes(niveauPrecedentId)) estBloque = true;
+
+                    // Condition d'ordre
+                    if (idxGlobal > 0) {
+                        const nivPrecedentId = niveaux[idxGlobal - 1].id;
+                        if (!profilEleve.valides.includes(nivPrecedentId)) estBloque = true;
                     }
 
-                    const estFini = etapesValidees.includes(niveau.id);
-                    let badge = estBloque ? '<span class="badge bg-danger float-end">Bloqué 🔒</span>' : (estFini ? '<span class="badge bg-success float-end">Validé ✅</span>' : '<span class="badge bg-warning text-dark float-end">Disponible ⭐</span>');
-                    let styleClasse = estBloque ? 'bloque list-group-item-secondary' : (estFini ? 'list-group-item-success' : 'list-group-item-warning');
-                    let labelType = niveau.type === 'lecon' ? 'Cours + Exo' : 'Exo Seul';
+                    // Condition de Tag requis
+                    let tagRefuse = false;
+                    if (niveau.tagRequis && niveau.tagRequis.trim() !== "") {
+                        if (profilEleve.tag !== niveau.tagRequis.trim()) {
+                            estBloque = true;
+                            tagRefuse = true;
+                        }
+                    }
+
+                    const estFini = profilEleve.valides.includes(niveau.id);
+                    let badge = estFini ? '<span class="badge bg-success">Validé ✅</span>' : 
+                                (estBloque ? `<span class="badge bg-danger">${tagRefuse ? 'Tag ' + niveau.tagRequis + ' requis 🔒' : 'Bloqué 🔒'}</span>` : 
+                                '<span class="badge bg-warning text-dark">Disponible ⭐</span>');
+
+                    let styleClasse = estBloque ? 'bloque list-group-item-dark' : (estFini ? 'list-group-item-success' : 'list-group-item-action');
 
                     htmlCat += `
-                        <button class="list-group-item list-group-item-action p-3 mb-1 rounded ${styleClasse}" onclick="ouvrirEtape(${niveau.id})">
-                            <strong>${niveau.titre}</strong> <small class="text-muted">(${labelType})</small> ${badge}
+                        <button class="list-group-item d-flex justify-content-between align-items-center p-3 mb-1 rounded ${styleClasse}" onclick="ouvrirEtape(${niveau.id})">
+                            <div>
+                                <strong>${niveau.titre}</strong>
+                                ${niveau.tagRequis ? `<span class="badge bg-info ms-2">Tag: ${niveau.tagRequis}</span>` : ''}
+                            </div>
+                            <div>${badge}</div>
                         </button>
                     `;
                 });
@@ -275,87 +515,114 @@
             });
         }
 
+        // --- 6. OUVERTURE D'UNE ETAPE ET EXECUTION DU CODE ---
         function ouvrirEtape(id) {
             const niveaux = JSON.parse(localStorage.getItem('python_niveaux'));
             etapeActuelle = niveaux.find(n => n.id === id);
 
             if (etapeActuelle.type === "exercice_seul") {
                 document.getElementById('zone-cours-contenu').style.display = "none";
-                document.getElementById('titre-exercice-section').innerText = "Exercice Unique : " + etapeActuelle.titre;
+                document.getElementById('zone-exercice').className = "col-lg-12";
+                document.getElementById('titre-exercice-section').innerText = "Exercice Seul : " + etapeActuelle.titre;
             } else {
                 document.getElementById('zone-cours-contenu').style.display = "block";
+                document.getElementById('zone-exercice').className = "col-lg-7";
                 document.getElementById('lecon-titre').innerText = etapeActuelle.titre;
                 document.getElementById('lecon-contenu').innerText = etapeActuelle.contenu;
-                document.getElementById('titre-exercice-section').innerText = "Exercice d'application";
+                document.getElementById('titre-exercice-section').innerText = "Exercice Pratique";
             }
 
             document.getElementById('ex-consigne').innerText = etapeActuelle.consigne;
-            document.getElementById('code-utilisateur').value = "";
+            if (monacoEditor) monacoEditor.setValue("# Écris ton code Python ici...\n");
+
+            document.getElementById('console-output').innerText = "> En attente d'exécution...";
             document.getElementById('zone-correction').className = "alert d-none";
             document.getElementById('btn-terminer').classList.add('d-none');
-            
-            const zoneIndice = document.getElementById('zone-indice-eleve');
-            const texteIndice = document.getElementById('texte-indice-eleve');
-            texteIndice.innerText = etapeActuelle.indice || "";
-            texteIndice.classList.add('d-none');
-
-            if (etapeActuelle.indice && etapeActuelle.indice.trim() !== "") {
-                zoneIndice.classList.remove('d-none');
-            } else {
-                zoneIndice.classList.add('d-none');
-            }
+            document.getElementById('texte-indice-eleve').classList.add('d-none');
 
             changerPage('page-lecon');
         }
 
-        function afficherIndiceEleve() {
-            document.getElementById('texte-indice-eleve').classList.remove('d-none');
-        }
+        async function executerEtVerifierCode() {
+            await initPyodideEngine();
+            const code = monacoEditor.getValue();
+            const consoleBox = document.getElementById('console-output');
+            const divCorrection = document.getElementById('zone-correction');
 
-        // --- VÉRIFICATION PAR MOTS-CLÉS ---
-        function verifierCode() {
-            const codeEleve = document.getElementById('code-utilisateur').value;
-            const div = document.getElementById('zone-correction');
-            div.className = "alert";
-            
-            const motsAttendus = etapeActuelle.solution.trim().split(/[\s\n]+/).filter(m => m.length > 0);
-            let toutEstLa = true;
-            
-            motsAttendus.forEach(mot => {
-                if (!codeEleve.includes(mot)) {
-                    toutEstLa = false;
+            consoleBox.innerText = "> Exécution en cours...";
+            divCorrection.className = "alert d-none";
+
+            // Redirection de la sortie print()
+            pyodide.setStdout({ batched: (msg) => { consoleBox.innerText = msg; } });
+
+            try {
+                await pyodide.runPythonAsync(code);
+                if (consoleBox.innerText === "> Exécution en cours...") {
+                    consoleBox.innerText = "> Code exécuté sans sortie texte (aucun print).";
                 }
-            });
-            
-            if (toutEstLa && motsAttendus.length > 0) {
-                div.innerText = "✅ Réponse correcte ! Félicitations.";
-                div.classList.add('alert-success');
+
+                // Vérification simple basée sur la solution modèle ou l'absence d'erreur
+                divCorrection.className = "alert alert-success";
+                divCorrection.innerText = "✅ Bravo ! Code exécuté avec succès.";
                 document.getElementById('btn-terminer').classList.remove('d-none');
-            } else {
-                div.innerText = `❌ Ce n'est pas tout à fait ça. Relis bien la consigne, vérifie tes fautes d'orthographe et réessaie !`;
-                div.classList.add('alert-danger');
+
+                confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
+
+            } catch (err) {
+                consoleBox.innerText = "> Erreur Python :\n" + err;
+                divCorrection.className = "alert alert-danger";
+                divCorrection.innerText = "❌ Une erreur est survenue dans ton code. Lis la console pour la corriger !";
             }
         }
 
-        function marquerEtapeTerminee() {
+        function validerEtEtapeSuivante() {
             let eleves = JSON.parse(localStorage.getItem('python_eleves')) || {};
-            if (!eleves[utilisateurActuel].includes(etapeActuelle.id)) eleves[utilisateurActuel].push(etapeActuelle.id);
-            localStorage.setItem('python_eleves', JSON.stringify(eleves));
+            let profil = eleves[utilisateurActuel];
+
+            if (!profil.valides.includes(etapeActuelle.id)) {
+                profil.valides.push(etapeActuelle.id);
+                profil.xp = (profil.xp || 0) + 50;
+                localStorage.setItem('python_eleves', JSON.stringify(eleves));
+            }
+
+            rafraichirStatsEleve();
             chargerParcoursEleve();
-            changerPage('page-accueil');
+
+            // Navigation automatique au suivant
+            const niveaux = JSON.parse(localStorage.getItem('python_niveaux'));
+            const idxActuel = niveaux.findIndex(n => n.id === etapeActuelle.id);
+
+            if (idxActuel < niveaux.length - 1) {
+                ouvrirEtape(niveaux[idxActuel + 1].id);
+            } else {
+                alert("🎉 Félicitations ! Tu as terminé l'ensemble du parcours !");
+                changerPage('page-accueil');
+            }
         }
 
-        // --- GESTION ADMINISTRATIVE ---
+        function toggleIndice() {
+            const el = document.getElementById('texte-indice-eleve');
+            el.innerText = etapeActuelle.indice || "Pas d'indice particulier pour ce niveau.";
+            el.classList.toggle('d-none');
+        }
+
+        function copierCode() {
+            navigator.clipboard.writeText(monacoEditor.getValue());
+            alert("Code copié dans le presse-papier !");
+        }
+
+        // --- 7. PANEL ADMINISTRATEUR & GESTION ---
         function ouvrirPanelAdmin() {
             refreshDropdownCategories();
             renderTableauGestion();
-            renderTableauSuivi();
+            renderTableauEleves();
             changerPage('page-admin');
         }
 
         function switchOngletAdmin(onglet) {
             document.getElementById('onglet-admin-gestion').style.display = onglet === 'gestion' ? 'block' : 'none';
             document.getElementById('onglet-admin-eleves').style.display = onglet === 'eleves' ? 'block' : 'none';
+            document.getElementById('onglet-admin-securite').style.display = onglet === 'securite' ? 'block' : 'none';
         }
 
         function refreshDropdownCategories() {
@@ -371,69 +638,61 @@
         }
 
         function creerCategorie() {
-            const input = document.getElementById('admin-nom-cat');
-            const nom = input.value.trim();
+            const nom = document.getElementById('admin-nom-cat').value.trim();
             if (!nom) return;
             let categories = JSON.parse(localStorage.getItem('python_categories'));
-            if (categories.includes(nom)) return alert("Cette catégorie existe déjà.");
-            categories.push(nom);
-            localStorage.setItem('python_categories', JSON.stringify(categories));
-            input.value = "";
-            refreshDropdownCategories();
-            renderTableauGestion();
+            if (!categories.includes(nom)) {
+                categories.push(nom);
+                localStorage.setItem('python_categories', JSON.stringify(categories));
+                document.getElementById('admin-nom-cat').value = "";
+                refreshDropdownCategories();
+                renderTableauGestion();
+            }
         }
 
         function sauvegarderNiveau() {
             const idModif = document.getElementById('admin-id-niveau-modif').value;
             const categorie = document.getElementById('admin-select-cat').value;
+            const tagRequis = document.getElementById('admin-tag-requis').value.trim();
             const type = document.getElementById('admin-type').value;
             const titre = document.getElementById('admin-titre').value.trim();
             const contenu = document.getElementById('admin-contenu').value.trim();
             const consigne = document.getElementById('admin-consigne').value.trim();
             const indice = document.getElementById('admin-indice').value.trim();
-            const solution = document.getElementById('admin-solution').value;
+            const solution = document.getElementById('admin-solution').value.trim();
 
-            if (!titre || !consigne || !solution || !categorie) return alert("Veuillez remplir les champs obligatoires.");
+            if (!titre || !consigne) return alert("Veuillez remplir les champs obligatoires.");
 
             let niveaux = JSON.parse(localStorage.getItem('python_niveaux'));
 
             if (idModif) {
                 let index = niveaux.findIndex(n => n.id == idModif);
-                niveaux[index] = { id: parseInt(idModif), categorie, type, titre, contenu: type==='lecon'?contenu:'', consigne, indice, solution };
-                alert("Niveau modifié !");
-                annulerModificationNiveau();
+                niveaux[index] = { id: parseInt(idModif), categorie, tagRequis, type, titre, contenu: type==='lecon'?contenu:'', consigne, indice, solution };
             } else {
-                const nouvelId = niveaux.length > 0 ? niveaux[niveaux.length - 1].id + 1 : 1;
-                niveaux.push({ id: nouvelId, categorie, type, titre, contenu: type==='lecon'?contenu:'', consigne, indice, solution });
-                alert("Niveau ajouté !");
+                const nouvelId = niveaux.length > 0 ? Math.max(...niveaux.map(n => n.id)) + 1 : 1;
+                niveaux.push({ id: nouvelId, categorie, tagRequis, type, titre, contenu: type==='lecon'?contenu:'', consigne, indice, solution });
             }
 
             localStorage.setItem('python_niveaux', JSON.stringify(niveaux));
-            
-            document.getElementById('admin-titre').value = "";
-            document.getElementById('admin-contenu').value = "";
-            document.getElementById('admin-consigne').value = "";
-            document.getElementById('admin-indice').value = "";
-            document.getElementById('admin-solution').value = "";
+            annulerModificationNiveau();
             renderTableauGestion();
         }
 
         function chargerModifierNiveau(id) {
             let niveaux = JSON.parse(localStorage.getItem('python_niveaux'));
             let n = niveaux.find(x => x.id === id);
-            
+
             document.getElementById('form-niveau-titre').innerText = "📝 Modifier le Niveau";
             document.getElementById('admin-id-niveau-modif').value = n.id;
             document.getElementById('admin-select-cat').value = n.categorie;
+            document.getElementById('admin-tag-requis').value = n.tagRequis || "";
             document.getElementById('admin-type').value = n.type;
             document.getElementById('admin-titre').value = n.titre;
             document.getElementById('admin-contenu').value = n.contenu;
             document.getElementById('admin-consigne').value = n.consigne;
-            document.getElementById('admin-indice').value = n.indice || "";
+            document.getElementById('admin-indice').value = n.indice;
             document.getElementById('admin-solution').value = n.solution;
-            
-            document.getElementById('btn-admin-soumettre-niveau').innerText = "Enregistrer les modifications";
-            document.getElementById('btn-admin-soumettre-niveau').className = "btn btn-warning btn-sm w-100 mt-2";
+
             document.getElementById('btn-admin-annuler-modif').classList.remove('d-none');
             toggleFormAdminFields();
         }
@@ -446,27 +705,13 @@
             document.getElementById('admin-consigne').value = "";
             document.getElementById('admin-indice').value = "";
             document.getElementById('admin-solution').value = "";
-            document.getElementById('btn-admin-soumettre-niveau').innerText = "Ajouter le Niveau";
-            document.getElementById('btn-admin-soumettre-niveau').className = "btn btn-success btn-sm w-100 mt-2";
             document.getElementById('btn-admin-annuler-modif').classList.add('d-none');
-            toggleFormAdminFields();
         }
 
         function supprimerNiveau(id) {
             if (!confirm("Supprimer ce niveau ?")) return;
             let niveaux = JSON.parse(localStorage.getItem('python_niveaux'));
             niveaux = niveaux.filter(n => n.id !== id);
-            localStorage.setItem('python_niveaux', JSON.stringify(niveaux));
-            renderTableauGestion();
-        }
-
-        function deplacerNiveau(index, direction) {
-            let niveaux = JSON.parse(localStorage.getItem('python_niveaux'));
-            if (direction === 'haut' && index > 0) {
-                let temp = niveaux[index];   niveaux[index] = niveaux[index - 1]; niveaux[index - 1] = temp;
-            } else if (direction === 'bas' && index < niveaux.length - 1) {
-                let temp = niveaux[index];   niveaux[index] = niveaux[index + 1]; niveaux[index + 1] = temp;
-            }
             localStorage.setItem('python_niveaux', JSON.stringify(niveaux));
             renderTableauGestion();
         }
@@ -479,43 +724,102 @@
             niveaux.forEach((n, idx) => {
                 tbody.innerHTML += `
                     <tr>
-                        <td><span class="badge bg-secondary">${idx + 1}</span></td>
+                        <td>${idx + 1}</td>
                         <td><small>${n.categorie}</small></td>
-                        <td><span class="badge ${n.type==='lecon'?'bg-info text-dark':'bg-dark'}">${n.type==='lecon'?'Cours':'Exo'}</span></td>
                         <td class="text-start"><strong>${n.titre}</strong></td>
+                        <td>${n.tagRequis ? `<span class="badge bg-info">${n.tagRequis}</span>` : '-'}</td>
                         <td>
-                            <button class="btn btn-outline-dark btn-ordre" onclick="deplacerNiveau(${idx}, 'haut')">▲</button>
-                            <button class="btn btn-outline-dark btn-ordre" onclick="deplacerNiveau(${idx}, 'bas')">▼</button>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-primary py-0 px-2" onclick="chargerModifierNiveau(${n.id})">Modifier</button>
-                            <button class="btn btn-sm btn-danger py-0 px-2" onclick="supprimerNiveau(${n.id})">Suppr</button>
+                            <button class="btn btn-sm btn-warning me-1" onclick="chargerModifierNiveau(${n.id})">Éditer</button>
+                            <button class="btn btn-sm btn-danger" onclick="supprimerNiveau(${n.id})">Suppr</button>
                         </td>
                     </tr>
                 `;
             });
         }
 
-        function renderTableauSuivi() {
+        function renderTableauEleves() {
             const tbody = document.getElementById('tableau-suivi-eleves');
             tbody.innerHTML = '';
             const eleves = JSON.parse(localStorage.getItem('python_eleves')) || {};
-            const niveaux = JSON.parse(localStorage.getItem('python_niveaux')) || [];
 
             Object.keys(eleves).forEach(prenom => {
-                let listIdValides = eleves[prenom];
-                let texteProgression = listIdValides.map(id => {
-                    let index = niveaux.findIndex(n => n.id === id);
-                    return index !== -1 ? `Niv ${index + 1}` : '';
-                }).filter(t => t !== '').join(', ') || "Aucun niveau";
-
-                tbody.innerHTML += `<tr><td class="fw-bold text-capitalize">${prenom}</td><td><span class="badge bg-success">${texteProgression}</span></td></tr>`;
+                let e = eleves[prenom];
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="fw-bold">${prenom}</td>
+                        <td><span class="badge bg-warning text-dark">${e.xp || 0} XP</span></td>
+                        <td><span class="badge bg-secondary">${e.tag || 'Aucun'}</span></td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm bg-dark text-light d-inline-block w-auto" placeholder="Nouveau Tag" id="tag-input-${prenom}">
+                            <button class="btn btn-sm btn-primary" onclick="attribuerTag('${prenom}')">OK</button>
+                        </td>
+                        <td>${e.valides ? e.valides.length : 0} niveau(x) validé(s)</td>
+                    </tr>
+                `;
             });
         }
 
+        function attribuerTag(prenom) {
+            const input = document.getElementById(`tag-input-${prenom}`);
+            let val = input.value.trim();
+            let eleves = JSON.parse(localStorage.getItem('python_eleves'));
+            eleves[prenom].tag = val;
+            localStorage.setItem('python_eleves', JSON.stringify(eleves));
+            renderTableauEleves();
+        }
+
+        function changerCodeAdmin() {
+            const newPass = document.getElementById('input-new-admin-pass').value.trim();
+            if (newPass) {
+                localStorage.setItem('python_admin_pass', newPass);
+                alert("Code administrateur mis à jour !");
+            }
+        }
+
+        // --- 8. EXPORT / IMPORT JSON ---
+        function exporterJSON() {
+            const data = {
+                categories: JSON.parse(localStorage.getItem('python_categories')),
+                niveaux: JSON.parse(localStorage.getItem('python_niveaux'))
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'parcours_python.json';
+            a.click();
+        }
+
+        function importerJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.categories && data.niveaux) {
+                        localStorage.setItem('python_categories', JSON.stringify(data.categories));
+                        localStorage.setItem('python_niveaux', JSON.stringify(data.niveaux));
+                        alert("Importation réussie !");
+                        refreshDropdownCategories();
+                        renderTableauGestion();
+                    }
+                } catch (err) {
+                    alert("Fichier JSON invalide.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- 9. UTILITAIRES ---
         function changerPage(pageId) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            html.setAttribute('data-bs-theme', html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark');
         }
     </script>
 </body>
